@@ -112,7 +112,7 @@
     </model>
     <model name='sideview_camera'>
         <static>1</static>
-        <pose>2 0 1.75 -0 0.282863 3.14</pose>
+        <pose>1.4530739784240723 1.3485211133956909 1.796921968460083 0 3.03650762e-01 -2.33415348</pose>
         <link name='link'>
             <pose>0.05 0.05 0.05 0 -0 0</pose>
             <visual name='visual'>
