@@ -25,8 +25,8 @@ def sample_positions(
     if num_samples == 0:
         return np.array([])
 
-    center = np.array((0.4, 0, 0.025))
-    half_extent = np.array((0.25, 0.5, 0))
+    center = np.array((0, 0.1, 0.025))
+    half_extent = np.array((0.5, 0.2, 0))
 
     accepted_samples = np.empty((num_samples, 3))
     accepted_samples[0] = center + rng.rand(3) * 2 * half_extent - half_extent
@@ -77,13 +77,15 @@ def generate_environment(num_goals: int, seed: int) -> None:
 
     colors = [
         # faithfully borrowed from https://xkcd.com/color/rgb/
-        (126, 30, 156, 1),  # purple
-        (21, 176, 26, 1),   # green
-        (3, 67, 223, 1),    # blue
-        (255, 129, 192, 1), # pink
-        (149, 208, 252, 1), # teal
-        (249, 115, 6, 1),   # orange
+        (126, 30, 156, 255),  # purple
+        (21, 176, 26, 255),   # green
+        (3, 67, 223, 255),    # blue
+        (255, 129, 192, 255), # pink
+        (149, 208, 252, 255), # teal
+        (249, 115, 6, 255),   # orange
     ]
+
+    colors = (np.asarray(colors) / 255).tolist()
 
     for cube_idx in range(num_goals):
         cube: v18.ModelModel = deepcopy(cube_base)
@@ -109,5 +111,5 @@ if __name__ == "__main__":
     base = Path(__file__).parent / "sdf"
 
     (base / "four_goals.sdf").write_text(generate_environment(4, 1337))
-    (base / "five_goals.sdf").write_text(generate_environment(5, 42))
+    (base / "five_goals.sdf").write_text(generate_environment(5, 6541))
     (base / "six_goals.sdf").write_text(generate_environment(6, 2906))

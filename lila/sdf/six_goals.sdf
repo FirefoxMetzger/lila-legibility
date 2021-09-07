@@ -169,7 +169,7 @@
       <self_collide>false</self_collide>
       <allow_auto_disable>true</allow_auto_disable>
       <enable_wind>false</enable_wind>
-      <pose>2 0 1.75 -0 0.282863 3.14</pose>
+      <pose>1.4530739784240723 1.3485211133956909 1.796921968460083 0 3.03650762e-01 -2.33415348</pose>
       <link name="link">
         <gravity>true</gravity>
         <enable_wind>false</enable_wind>
@@ -214,7 +214,7 @@
       <self_collide>false</self_collide>
       <allow_auto_disable>true</allow_auto_disable>
       <enable_wind>false</enable_wind>
-      <pose relative_to="tabletop_2">0.36835331888964706 0.15173162227783488 0.025 0 0 0</pose>
+      <pose relative_to="tabletop_2">-0.06329336222070603 0.16069264891113394 0.025 0 0 0</pose>
       <link name="box_link">
         <gravity>true</gravity>
         <enable_wind>false</enable_wind>
@@ -269,9 +269,9 @@
           <material>
             <render_order>0.0</render_order>
             <lighting>true</lighting>
-            <ambient>126 30 156 1</ambient>
-            <diffuse>126 30 156 1</diffuse>
-            <specular>126 30 156 1</specular>
+            <ambient>0.49411764705882355 0.11764705882352941 0.611764705882353 1.0</ambient>
+            <diffuse>0.49411764705882355 0.11764705882352941 0.611764705882353 1.0</diffuse>
+            <specular>0.49411764705882355 0.11764705882352941 0.611764705882353 1.0</specular>
             <emissive>0 0 0 1</emissive>
             <double_sided>false</double_sided>
           </material>
@@ -288,7 +288,7 @@
       <self_collide>false</self_collide>
       <allow_auto_disable>true</allow_auto_disable>
       <enable_wind>false</enable_wind>
-      <pose relative_to="tabletop_2">0.42044720497248655 -0.4193574968437085 0.025 0 0 0</pose>
+      <pose relative_to="tabletop_2">0.040894409944973176 -0.0677429987374834 0.025 0 0 0</pose>
       <link name="box_link">
         <gravity>true</gravity>
         <enable_wind>false</enable_wind>
@@ -343,9 +343,9 @@
           <material>
             <render_order>0.0</render_order>
             <lighting>true</lighting>
-            <ambient>255 129 192 1</ambient>
-            <diffuse>255 129 192 1</diffuse>
-            <specular>255 129 192 1</specular>
+            <ambient>1.0 0.5058823529411764 0.7529411764705882 1.0</ambient>
+            <diffuse>1.0 0.5058823529411764 0.7529411764705882 1.0</diffuse>
+            <specular>1.0 0.5058823529411764 0.7529411764705882 1.0</specular>
             <emissive>0 0 0 1</emissive>
             <double_sided>false</double_sided>
           </material>
@@ -362,7 +362,7 @@
       <self_collide>false</self_collide>
       <allow_auto_disable>true</allow_auto_disable>
       <enable_wind>false</enable_wind>
-      <pose relative_to="tabletop_2">0.38044195671832304 0.4737735748616586 0.025 0 0 0</pose>
+      <pose relative_to="tabletop_2">-0.03911608656335408 0.2895094299446635 0.025 0 0 0</pose>
       <link name="box_link">
         <gravity>true</gravity>
         <enable_wind>false</enable_wind>
@@ -417,9 +417,9 @@
           <material>
             <render_order>0.0</render_order>
             <lighting>true</lighting>
-            <ambient>149 208 252 1</ambient>
-            <diffuse>149 208 252 1</diffuse>
-            <specular>149 208 252 1</specular>
+            <ambient>0.5843137254901961 0.8156862745098039 0.9882352941176471 1.0</ambient>
+            <diffuse>0.5843137254901961 0.8156862745098039 0.9882352941176471 1.0</diffuse>
+            <specular>0.5843137254901961 0.8156862745098039 0.9882352941176471 1.0</specular>
             <emissive>0 0 0 1</emissive>
             <double_sided>false</double_sided>
           </material>
@@ -436,7 +436,7 @@
       <self_collide>false</self_collide>
       <allow_auto_disable>true</allow_auto_disable>
       <enable_wind>false</enable_wind>
-      <pose relative_to="tabletop_2">0.48644589216382383 -0.2868752627717245 0.025 0 0 0</pose>
+      <pose relative_to="tabletop_2">0.17289178432764762 -0.014750105108689793 0.025 0 0 0</pose>
       <link name="box_link">
         <gravity>true</gravity>
         <enable_wind>false</enable_wind>
@@ -491,9 +491,9 @@
           <material>
             <render_order>0.0</render_order>
             <lighting>true</lighting>
-            <ambient>249 115 6 1</ambient>
-            <diffuse>249 115 6 1</diffuse>
-            <specular>249 115 6 1</specular>
+            <ambient>0.9764705882352941 0.45098039215686275 0.023529411764705882 1.0</ambient>
+            <diffuse>0.9764705882352941 0.45098039215686275 0.023529411764705882 1.0</diffuse>
+            <specular>0.9764705882352941 0.45098039215686275 0.023529411764705882 1.0</specular>
             <emissive>0 0 0 1</emissive>
             <double_sided>false</double_sided>
           </material>
@@ -510,7 +510,7 @@
       <self_collide>false</self_collide>
       <allow_auto_disable>true</allow_auto_disable>
       <enable_wind>false</enable_wind>
-      <pose relative_to="tabletop_2">0.2501021403729985 0.4681486226350424 0.025 0 0 0</pose>
+      <pose relative_to="tabletop_2">-0.29979571925400306 0.28725944905401696 0.025 0 0 0</pose>
       <link name="box_link">
         <gravity>true</gravity>
         <enable_wind>false</enable_wind>
@@ -565,9 +565,9 @@
           <material>
             <render_order>0.0</render_order>
             <lighting>true</lighting>
-            <ambient>3 67 223 1</ambient>
-            <diffuse>3 67 223 1</diffuse>
-            <specular>3 67 223 1</specular>
+            <ambient>0.011764705882352941 0.2627450980392157 0.8745098039215686 1.0</ambient>
+            <diffuse>0.011764705882352941 0.2627450980392157 0.8745098039215686 1.0</diffuse>
+            <specular>0.011764705882352941 0.2627450980392157 0.8745098039215686 1.0</specular>
             <emissive>0 0 0 1</emissive>
             <double_sided>false</double_sided>
           </material>
@@ -584,7 +584,7 @@
       <self_collide>false</self_collide>
       <allow_auto_disable>true</allow_auto_disable>
       <enable_wind>false</enable_wind>
-      <pose relative_to="tabletop_2">0.4952057357691908 0.07709534983071165 0.025 0 0 0</pose>
+      <pose relative_to="tabletop_2">0.14037326314193177 0.28279746340727135 0.025 0 0 0</pose>
       <link name="box_link">
         <gravity>true</gravity>
         <enable_wind>false</enable_wind>
@@ -639,9 +639,9 @@
           <material>
             <render_order>0.0</render_order>
             <lighting>true</lighting>
-            <ambient>21 176 26 1</ambient>
-            <diffuse>21 176 26 1</diffuse>
-            <specular>21 176 26 1</specular>
+            <ambient>0.08235294117647059 0.6901960784313725 0.10196078431372549 1.0</ambient>
+            <diffuse>0.08235294117647059 0.6901960784313725 0.10196078431372549 1.0</diffuse>
+            <specular>0.08235294117647059 0.6901960784313725 0.10196078431372549 1.0</specular>
             <emissive>0 0 0 1</emissive>
             <double_sided>false</double_sided>
           </material>
