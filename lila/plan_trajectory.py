@@ -39,15 +39,16 @@ def plan_trajectory(environment:Path, metric):
     goal_idx = 0
     
     result = minimize(lambda x: metric(x.reshape(100, planning_dim), goal_array)[goal_idx], planning_trajectory)
-    optimal_trajectory = result.x.reshape(100, planning_dim)
-
+    optimal_trajectory = np.empty((101, planning_space.ndim), dtype=np.float_)
+    optimal_trajectory[:-1, ...] = result.x.reshape(100, planning_dim)
+    optimal_trajectory[-1, ...] = planning_goals[goal_idx]
     optimal_trajectory = trj.spline_trajectory(np.linspace(0, 1, 100), optimal_trajectory)
 
     trajectory_joint_space = np.empty((100, 9), dtype=np.float_)
-    for idx in range(100):
+    for idx in reversed(range(100)):
         world_pos = optimal_trajectory[idx, ...]
         joint_pos = ik.ccd((0,0,0), world_pos, tool_frame, world_frame, joints)
-        trajectory_joint_space[idx, ...] = joint_pos
+        trajectory_joint_space[idx, ...] = joint_pos + [0.03, 0.03]
 
     print("")
 
