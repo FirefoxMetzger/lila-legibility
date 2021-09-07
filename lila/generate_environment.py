@@ -2,7 +2,6 @@ from copy import deepcopy
 from pathlib import Path
 import random
 
-import click
 import numpy as np
 from skbot.ignition import sdformat
 from skbot.ignition.sdformat.bindings import v18
@@ -63,15 +62,6 @@ def sample_positions(
     return accepted_samples
 
 
-@click.command()
-@click.option(
-    "--num-goals",
-    "num_goals",
-    default=5,
-    help="The number of goals/cubes to be placed in the environment.",
-    type=click.IntRange(4, 6),
-)
-@click.option("--seed", default=None, help="The seed to use for rng.", type=click.INT)
 def generate_environment(num_goals: int, seed: int) -> None:
     sdf_folder = Path(__file__).parent / "sdf"
     env: v18.Sdf = sdformat.loads((sdf_folder / "environment_template.sdf").read_text())
@@ -110,5 +100,14 @@ def generate_environment(num_goals: int, seed: int) -> None:
 
     sdf_string = sdformat.dumps(env, format=True)
 
-    print(f"<!-- Generated using Lila Legibility v1.0. Seed: {seed} -->")
-    print(sdf_string)
+    footer = f"<!-- Generated using Lila Legibility v1.0. Seed: {seed} -->"
+
+    return sdf_string + footer
+
+
+if __name__ == "__main__":
+    base = Path(__file__).parent / "sdf"
+
+    (base / "four_goals.sdf").write_text(generate_environment(4, 1337))
+    (base / "five_goals.sdf").write_text(generate_environment(5, 42))
+    (base / "six_goals.sdf").write_text(generate_environment(6, 2906))
