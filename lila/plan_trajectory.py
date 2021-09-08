@@ -50,7 +50,7 @@ def plan_trajectory(environment:Path, metric):
         joint_pos = ik.ccd((0,0,0), world_pos, tool_frame, world_frame, joints)
         trajectory_joint_space[idx, ...] = joint_pos + [0.03, 0.03]
 
-    print("")
+    return trajectory_joint_space
 
 
 def cost(trajectory:ArrayLike, goals:List[ArrayLike]) -> List[float]:
