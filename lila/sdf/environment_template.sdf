@@ -1,5 +1,26 @@
 <sdf version='1.8'>
   <world name='panda_world'>
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin
+      filename="ignition-gazebo-physics-system"
+      name="ignition::gazebo::systems::Physics">
+    </plugin>
+    <plugin
+      filename="ignition-gazebo-sensors-system"
+      name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre</render_engine>
+    </plugin>
+    <plugin
+      filename="ignition-gazebo-user-commands-system"
+      name="ignition::gazebo::systems::UserCommands">
+    </plugin>
+    <plugin
+      filename="ignition-gazebo-scene-broadcaster-system"
+      name="ignition::gazebo::systems::SceneBroadcaster">
+    </plugin>
     <light name='sun' type='directional'>
       <cast_shadows>1</cast_shadows>
       <pose>0 0 10 0 -0 0</pose>
@@ -106,7 +127,7 @@
                 <always_on>1</always_on>
                 <update_rate>30</update_rate>
                 <visualize>1</visualize>
-                <topic>camera</topic>
+                <topic>main_camera</topic>
             </sensor>
         </link>
     </model>
@@ -137,7 +158,7 @@
                 <always_on>1</always_on>
                 <update_rate>30</update_rate>
                 <visualize>1</visualize>
-                <topic>camera</topic>
+                <topic>sideview_camera</topic>
             </sensor>
         </link>
     </model>
