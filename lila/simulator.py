@@ -14,7 +14,6 @@ import skbot.ignition as ign
 import skbot.transform as rtf
 import skbot.trajectory as rtj
 from skbot.trajectory import spline_trajectory
-from parsers import camera_parser, clock_parser
 from dataclasses import dataclass
 
 from panda_wrapper import PandaMixin
@@ -129,7 +128,6 @@ class LegibilitySimulator(
         self.path_time_start = 0
         self.path_time_end = 10
 
-
     @property
     def world(self):
         return self.get_world()
@@ -168,31 +166,33 @@ class LegibilitySimulator(
         pose_keys = np.empty((6, 9), dtype=np.float_)
         pose_keys[0] = self.panda.home_position
         pose_keys[1] = self.panda.solve_ik(position=via_point)
-        pose_keys[2] = self.panda.solve_ik(position=(cube_position + np.array((0, 0, 0.01))))
-        pose_keys[2, -2:] = (.04, .04)
+        pose_keys[2] = self.panda.solve_ik(
+            position=(cube_position + np.array((0, 0, 0.01)))
+        )
+        pose_keys[2, -2:] = (0.04, 0.04)
         pose_keys[3] = self.panda.solve_ik(position=cube_position)
-        pose_keys[3, -2:] = (.04, .04)
-        pose_keys[4] = self.panda.solve_ik(position = cube_position)
+        pose_keys[3, -2:] = (0.04, 0.04)
+        pose_keys[4] = self.panda.solve_ik(position=cube_position)
         pose_keys[4, -2:] = (0, 0)
         pose_keys[5] = self.panda.home_position
         pose_keys[5, -2:] = (0, 0)
 
-
         # set keyframe times
         trajectory_duration = self.path_time_end - self.path_time_start
-        times = np.array([0, 0.275, 0.55, 0.6, 0.7, 1]) * trajectory_duration + self.path_time_start
+        times = (
+            np.array([0, 0.275, 0.55, 0.6, 0.7, 1]) * trajectory_duration
+            + self.path_time_start
+        )
 
         if self.path_time_start % self.step_size() != 0:
             raise RuntimeError("Path does not start during a simulator step.")
 
         t = np.arange(
-            self.path_time_start+self.step_size(),
-            self.path_time_end+self.step_size(),
-            self.step_size()
+            self.path_time_start + self.step_size(),
+            self.path_time_end + self.step_size(),
+            self.step_size(),
         )
-        self.path = spline_trajectory(
-            t, pose_keys, t_control=times, degree=1
-        )
+        self.path = spline_trajectory(t, pose_keys, t_control=times, degree=1)
         self.path_velocity = spline_trajectory(
             t,
             pose_keys,
@@ -200,7 +200,6 @@ class LegibilitySimulator(
             degree=1,
             derivative=1,
         )
-
 
     def run(self, **kwargs):
         sim_time = self.world.time()
@@ -210,7 +209,6 @@ class LegibilitySimulator(
             self.panda.target_velocity = self.path_velocity[idx]
 
         super().run(**kwargs)
-
 
     def __exit__(self, type, value, traceback):
         assert self.close()

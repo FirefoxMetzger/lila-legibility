@@ -22,8 +22,14 @@ from numpy.typing import ArrayLike
 import skbot.trajectory as rtj
 
 
-def velocity_fast(t: ArrayLike, keyframes: ArrayLike, *, trajectory_axis:float=-2, space_axis: int=-1) -> np.ndarray:
-    """ Compute the velocity along a path.
+def velocity_fast(
+    t: ArrayLike,
+    keyframes: ArrayLike,
+    *,
+    trajectory_axis: float = -2,
+    space_axis: int = -1
+) -> np.ndarray:
+    """Compute the velocity along a path.
 
     This function uses finite differences to approximate the velocity
     along a time-parameterized curve. Every dimension that isn't the
@@ -60,7 +66,9 @@ def velocity_fast(t: ArrayLike, keyframes: ArrayLike, *, trajectory_axis:float=-
     return velocity
 
 
-def cost(keyframes: ArrayLike, t: ArrayLike, *, integration_axis=-2, space_axis=-1) -> np.ndarray:
+def cost(
+    keyframes: ArrayLike, t: ArrayLike, *, integration_axis=-2, space_axis=-1
+) -> np.ndarray:
     """The human's attributed cost of a trajectory.
 
     Uses the cost model proposed by Dragan et al. to compute the cost of a given
@@ -68,7 +76,7 @@ def cost(keyframes: ArrayLike, t: ArrayLike, *, integration_axis=-2, space_axis=
     trajectories velocity. Integration axis controlls the dimension along which
     the integral is computed and space axis controls the dimension along with
     the norm is computed.
-    
+
     Parameters
     ----------
     keyframes : ArrayLike
@@ -95,9 +103,12 @@ def cost(keyframes: ArrayLike, t: ArrayLike, *, integration_axis=-2, space_axis=
     square_norm_v = np.sum(velocity ** 2, axis=-1)
     return rtj.utils.integral(square_norm_v, t, axis=-1)
 
-def V_fast(start : ArrayLike, goal : ArrayLike, velocity: float, *, space_axis:float =-1) -> np.ndarray:
+
+def V_fast(
+    start: ArrayLike, goal: ArrayLike, velocity: float, *, space_axis: float = -1
+) -> np.ndarray:
     """Compute the cost of the minimum cost trajectory to the goal.
-    
+
     This is a computationally efficient version that makes _strong_ assumptions about the cost function.
     I.e., it assumes the cost function to be exactly the one specified in the paper by Dragan et al.
     It also assume that the robot travels with constant velocity
@@ -126,7 +137,7 @@ def V_fast(start : ArrayLike, goal : ArrayLike, velocity: float, *, space_axis:f
     goal = np.moveaxis(goal, space_axis, 0)
     space_axis = start.ndim - 1
 
-    start = np.expand_dims(start, (start.ndim + np.arange(goal.ndim-1)).tolist())
+    start = np.expand_dims(start, (start.ndim + np.arange(goal.ndim - 1)).tolist())
     goal = np.expand_dims(goal, np.arange(space_axis).tolist())
 
     time = np.linalg.norm(goal - start, axis=space_axis) / velocity
@@ -137,8 +148,15 @@ def V_fast(start : ArrayLike, goal : ArrayLike, velocity: float, *, space_axis:f
     return cost(values, time)
 
 
-def prop_goal(t : ArrayLike, control_points : ArrayLike, goals : ArrayLike, velocity:float, *,  weights: ArrayLike = None) -> np.ndarray:
-    """ Calculate the probability of moving to each goal from the current position.
+def prop_goal(
+    t: ArrayLike,
+    control_points: ArrayLike,
+    goals: ArrayLike,
+    velocity: float,
+    *,
+    weights: ArrayLike = None
+) -> np.ndarray:
+    """Calculate the probability of moving to each goal from the current position.
 
     Parameters
     ----------
@@ -163,8 +181,7 @@ def prop_goal(t : ArrayLike, control_points : ArrayLike, goals : ArrayLike, velo
     start = control_points[0]
 
     if weights is None:
-        weights = np.full(len(goals), 1/len(goals)) 
-
+        weights = np.full(len(goals), 1 / len(goals))
 
     expected_cost = V_fast(control_points, goals, velocity)
     cost_from_start = V_fast(start[None, ...], goals, velocity)
@@ -179,8 +196,14 @@ def prop_goal(t : ArrayLike, control_points : ArrayLike, goals : ArrayLike, velo
     return p_dist
 
 
-def legibility(control_points: ArrayLike, potential_goals: ArrayLike, velocity: float, *, t_control: ArrayLike = None) -> float:
-    """ Compute the Dragan-Legibility along a given trajectory.
+def legibility(
+    control_points: ArrayLike,
+    potential_goals: ArrayLike,
+    velocity: float,
+    *,
+    t_control: ArrayLike = None
+) -> float:
+    """Compute the Dragan-Legibility along a given trajectory.
 
     The trajectory is given by a sequence of control points (keyframes). Control
     point positioning along the trajectory can be controlled by passing
@@ -222,7 +245,9 @@ def legibility(control_points: ArrayLike, potential_goals: ArrayLike, velocity: 
     goal_odds = prop_goal(t, eval_points, potential_goals, velocity)
     scale_factor = t_end - t
 
-    numerator = rtj.utils.cumulative_integral(goal_odds * scale_factor[:, None], t[:, None])[1:]
+    numerator = rtj.utils.cumulative_integral(
+        goal_odds * scale_factor[:, None], t[:, None]
+    )[1:]
     denominator = rtj.utils.cumulative_integral(scale_factor, t)[1:]
 
     legibility_scores = numerator / denominator[:, None]

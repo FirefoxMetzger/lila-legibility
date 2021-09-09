@@ -78,11 +78,11 @@ def generate_environment(num_goals: int, seed: int) -> None:
     colors = [
         # faithfully borrowed from https://xkcd.com/color/rgb/
         (126, 30, 156, 255),  # purple
-        (21, 176, 26, 255),   # green
-        (3, 67, 223, 255),    # blue
-        (255, 129, 192, 255), # pink
-        (149, 208, 252, 255), # teal
-        (249, 115, 6, 255),   # orange
+        (21, 176, 26, 255),  # green
+        (3, 67, 223, 255),  # blue
+        (255, 129, 192, 255),  # pink
+        (149, 208, 252, 255),  # teal
+        (249, 115, 6, 255),  # orange
     ]
 
     colors = (np.asarray(colors) / 255).tolist()

@@ -3,9 +3,9 @@ from numpy.typing import ArrayLike
 from typing import List
 
 
-def cost(trajectory:ArrayLike, goals:List[ArrayLike]) -> List[float]:
+def cost(trajectory: ArrayLike, goals: List[ArrayLike]) -> List[float]:
     """Path Length Cost - lower is better
-    
+
     Parameters
     ----------
     trajectory : ArrayLike
@@ -26,5 +26,7 @@ def cost(trajectory:ArrayLike, goals:List[ArrayLike]) -> List[float]:
 
     trajectory = np.asarray(trajectory)
 
-    trajectory_length = np.sum(np.linalg.norm(trajectory[1:] - trajectory[:-1], axis=-1))
+    trajectory_length = np.sum(
+        np.linalg.norm(trajectory[1:] - trajectory[:-1], axis=-1)
+    )
     return [trajectory_length + np.linalg.norm(goal - trajectory[-1]) for goal in goals]
