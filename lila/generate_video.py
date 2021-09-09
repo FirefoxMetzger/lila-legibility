@@ -274,6 +274,21 @@ def generate_video(trajectory: np.ndarray, environment: Path):
         step_size=0.001, steps_per_run=round((1 / 0.001) / 30)
     )
     simulator.insert_world_from_sdf(str(env))
+
+    # panda.to_gazebo().enable_self_collisions(True)
+
+    # # Insert the ComputedTorqueFixedBase controller
+    # assert panda.to_gazebo().insert_model_plugin(
+    #     *controllers.ComputedTorqueFixedBase(
+    #         kp=[100.0] * (self.dofs - 2) + [10000.0] * 2,
+    #         ki=[0.0] * self.dofs,
+    #         kd=[17.5] * (self.dofs - 2) + [100.0] * 2,
+    #         urdf=self.get_model_file(),
+    #         joints=self.joint_names(),
+    #     ).args()
+    # )
+
+
     simulator.initialize()
     # goal_px = simulator.in_px_coordinates(simulator.cubes[goal_idx].base_position())
     # ax.add_patch(Circle(goal_px, radius=10, color="red"))
