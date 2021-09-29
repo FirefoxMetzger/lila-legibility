@@ -15,11 +15,14 @@ import numpy as np
 import numpy.typing as npt
 import skbot.ignition as ign
 import skbot.trajectory as rtj
-import skbot.transform as rtf
+import skbot.transform as tf
 from skbot.ignition.sdformat.bindings import v18
 from gym_ignition.context.gazebo import controllers
 from gym_ignition.rbd import conversions
 from matplotlib.patches import Circle
+import gym_ignition_models
+import tempfile
+import time
 
 # from panda_controller import LinearJointSpacePlanner
 from scenario import core as scenario_core
@@ -96,142 +99,6 @@ class Panda(gym_ignition_environments.models.panda.Panda):
 
         panda.to_gazebo().enable_self_collisions(True)
 
-        # Insert the ComputedTorqueFixedBase controller
-        assert panda.to_gazebo().insert_model_plugin(
-            *controllers.ComputedTorqueFixedBase(
-                kp=[100.0] * (self.dofs - 2) + [10000.0] * 2,
-                ki=[0.0] * self.dofs,
-                kd=[17.5] * (self.dofs - 2) + [100.0] * 2,
-                urdf=self.get_model_file(),
-                joints=self.joint_names(),
-            ).args()
-        )
-
-    def reset(self):
-        self.position = self.home_position
-        self.velocity = [0] * 9
-        self.target_position = self.home_position
-        self.target_velocity = [0] * 9
-        self.target_acceleration = [0] * 9
-
-    @property
-    def dofs(self):
-        return self.model.dofs()
-
-    @property
-    def position(self):
-        return np.array(self.model.joint_positions())
-
-    @property
-    def velocity(self):
-        return np.array(self.model.joint_velocities())
-
-    @property
-    def acceleration(self):
-        return np.array(self.model.joint_accelerations())
-
-    @position.setter
-    def position(self, position: npt.ArrayLike):
-        position = np.asarray(position)
-
-        if np.any((position < self.min_position) | (self.max_position < position)):
-            raise ValueError("The position exceeds the robot's limits.")
-
-        assert self.model.to_gazebo().reset_joint_positions(position.tolist())
-
-    @velocity.setter
-    def velocity(self, velocity: npt.ArrayLike):
-        velocity = np.asarray(velocity)
-
-        if np.any((velocity < self.min_velocity) | (self.max_velocity < velocity)):
-            raise ValueError("The velocity exceeds the robot's limits.")
-
-        assert self.model.to_gazebo().reset_joint_velocities(velocity.tolist())
-
-    @property
-    def target_position(self):
-        return np.array(self.model.joint_position_targets())
-
-    @property
-    def target_velocity(self):
-        return np.array(self.model.joint_velocity_targets())
-
-    @property
-    def target_acceleration(self):
-        return np.array(self.model.joint_acceleration_targets())
-
-    @target_position.setter
-    def target_position(self, position: npt.ArrayLike):
-        position = np.asarray(position)
-
-        if np.any((position < self.min_position) | (self.max_position < position)):
-            raise ValueError("The target position exceeds the robot's limits.")
-
-        assert self.model.set_joint_position_targets(position.tolist())
-
-    @target_velocity.setter
-    def target_velocity(self, velocity: npt.ArrayLike):
-        velocity = np.asarray(velocity)
-
-        if np.any((velocity < self.min_velocity) | (self.max_velocity < velocity)):
-            raise ValueError("The target velocity exceeds the robot's limits.")
-
-        assert self.model.set_joint_velocity_targets(velocity.tolist())
-
-    @target_acceleration.setter
-    def target_acceleration(self, acceleration: npt.ArrayLike):
-        acceleration = np.asarray(acceleration)
-
-        if np.any(
-            (acceleration < self.min_acceleration)
-            | (self.max_acceleration < acceleration)
-        ):
-            raise ValueError("The target acceleration exceeds the robot's limits.")
-
-        assert self.model.set_joint_acceleration_targets(acceleration.tolist())
-
-    @property
-    def tool(self):
-        return self.model.get_link("end_effector_frame")
-
-    @property
-    def tool_pose(self):
-        position = self.model.get_link("end_effector_frame").position()
-        orientation = self.model.get_link("end_effector_frame").orientation()
-
-        return (position, orientation)
-
-    @tool_pose.setter
-    def tool_pose(self, pose):
-        """Set the joints so that the tool is in the desired configuration"""
-
-        position, orientation = pose
-        if position is None and orientation is None:
-            return
-
-        self.position = self.solve_ik(position=position, orientation=orientation)
-
-    # @target_tool_pose.setter
-    def target_tool_pose(self, pose):
-        position, orientation = pose
-        self.target_position = self.solve_ik(position=position, orientation=orientation)
-
-    @property
-    def tool_velocity(self):
-        return self.model.get_link("end_effector_frame").world_linear_velocity()
-
-    @property
-    def tool_angular_velocity(self):
-        return self.model.get_link("end_effector_frame").world_angular_velocity()
-
-    @property
-    def tool_acceleration(self):
-        return self.model.get_link("end_effector_frame").world_linear_acceleration()
-
-    @property
-    def tool_angular_acceleration(self):
-        return self.model.get_link("end_effector_frame").world_angular_acceleration()
-
 
 @dataclass
 class ImageMessage:
@@ -255,46 +122,84 @@ def generate_video(trajectory: np.ndarray, environment: Path):
     env = environment
     sdf_string = env.read_text()
 
-    world: v18.World = ign.sdformat.loads(sdf_string).world[0]
+    generic_sdf = ign.sdformat.loads_generic(sdf_string)
 
-    world_frame = ign.sdformat.to_frame_graph(sdf_string, shape=(100, 3))
-    tool_frame = world_frame.find_frame(".../panda_link8")
-    main_camera_frame = world_frame.find_frame(".../main_camera/.../pixel-space")
-    side_camera_frame = world_frame.find_frame(".../sideview_camera/.../pixel-space")
-    goals = [m for m in world.model if m.name.startswith("box_copy_")]
+
+    frames = generic_sdf.worlds[0].declared_frames()
+    generic_sdf.worlds[0].to_dynamic_graph(frames)
+
+    tool_frame = frames["panda::panda_link8"]
+    main_camera_frame = frames["main_camera::link::camera::pixel_space"]
+    side_camera_frame = frames["sideview_camera::link::camera::pixel_space"]
+    num_goals = len([m for m in generic_sdf.worlds[0].models if m.name.startswith("box_copy_")])
     goal_frames = [
-        world_frame.find_frame(f".../{goal.name}/box_link") for goal in goals
+        frames[f"box_copy_{idx}::box_link"] for idx in range(num_goals)
     ]
     goal_array = np.array(
-        [f.transform(((0, 0, 0),), world_frame)[0] for f in goal_frames]
+        [f.transform((0, 0, 0), frames["world"])[0] for f in goal_frames]
     )
 
     # fig, ax = plt.subplots(1)
+    sdf_obj = ign.sdformat.loads(sdf_string)
+    for model in sdf_obj.world[0].include:
+        if model.name == "panda":
+            sdf_obj.world[0].include.remove(model)
+            break
+    new_sdf_string = ign.sdformat.dumps(sdf_obj)
     simulator = scenario_gazebo.GazeboSimulator(
         step_size=0.001, steps_per_run=round((1 / 0.001) / 30)
     )
-    simulator.insert_world_from_sdf(str(env))
 
-    # panda.to_gazebo().enable_self_collisions(True)
-
-    # # Insert the ComputedTorqueFixedBase controller
-    # assert panda.to_gazebo().insert_model_plugin(
-    #     *controllers.ComputedTorqueFixedBase(
-    #         kp=[100.0] * (self.dofs - 2) + [10000.0] * 2,
-    #         ki=[0.0] * self.dofs,
-    #         kd=[17.5] * (self.dofs - 2) + [100.0] * 2,
-    #         urdf=self.get_model_file(),
-    #         joints=self.joint_names(),
-    #     ).args()
-    # )
+    with tempfile.NamedTemporaryFile(mode="r+") as f:
+        f.write(new_sdf_string)
+        f.seek(0)
+        assert simulator.insert_world_from_sdf(f.name)
 
 
-    simulator.initialize()
+    assert simulator.initialize()
+    world = simulator.get_world()
     # goal_px = simulator.in_px_coordinates(simulator.cubes[goal_idx].base_position())
     # ax.add_patch(Circle(goal_px, radius=10, color="red"))
 
+    panda = gym_ignition_environments.models.panda.Panda(world, position=[0.2, 0.0, 1.025])
+    panda.to_gazebo().enable_self_collisions(True)
+    # joints = [name for name in panda.joint_names() if "panda_joint" in name]
+
+    # Set the controller period
+    assert panda.set_controller_period(period=simulator.step_size())
+
+    # Insert the ComputedTorqueFixedBase controller
+    assert panda.to_gazebo().insert_model_plugin(
+        *controllers.ComputedTorqueFixedBase(
+            kp=[100.0] * (panda.dofs() - 2) + [10000.0] * 2,
+            ki=[0.0] * panda.dofs(),
+            kd=[17.5] * (panda.dofs() - 2) + [100.0] * 2,
+            urdf=panda.get_model_file(),
+            joints=panda.joint_names(),
+        ).args()
+    )
+    
+    simulator.run(paused=True)
+    assert panda.set_joint_position_targets(panda.joint_positions())
+    assert panda.set_joint_velocity_targets(panda.joint_velocities())
+    assert panda.set_joint_acceleration_targets(panda.joint_accelerations())
+
+    # ----
+    # TESTING ONLZ
+    import skbot.inverse_kinematics as ik
+
+    pose = np.zeros(9, dtype=float)
+    skbot_joint_links = [x for x in tool_frame.transform_chain(goal_frames[0]) if isinstance(x, tf.RotationalJoint)]
+    for idx, link in enumerate(reversed(skbot_joint_links)):
+        link.param = panda.joint_positions()[idx]
+    pose[:7] = ik.ccd((0, 0, 0), (1080/2, 1920/3), tool_frame, main_camera_frame, skbot_joint_links)[::-1]
+    assert panda.set_joint_position_targets(pose)
+    # -----
+
     # uncomment to show the GUI
     simulator.gui()
+    simulator.run()
+    time.sleep(3)
     # simulator.prepare_goal_trajectory(goal_idx, via_point_idx=trajectory_row.iloc[0]["viaPointIdx"])
     with ign.Subscriber(
         "/main_camera", parser=camera_parser
@@ -302,15 +207,11 @@ def generate_video(trajectory: np.ndarray, environment: Path):
         "/sideview_camera", parser=camera_parser
     ) as side_camera_topic:
         simulator.run(paused=True)
-        for sim_step in range(330):
+        for sim_step in range(50):
             # ax.add_patch(Circle(eff_px, radius=5))
             simulator.run()
+            
         
-        img_msg = camera_topic.recv()
-        iio.imwrite("front_view.png", img_msg.image)
-        side_img_msg = side_camera_topic.recv()
-        iio.imwrite("side_view.png", side_img_msg.image)
-
         writer = iio.get_writer("test.mp4", format="FFMPEG", mode="I", fps=30)
         while True:
             try:

@@ -170,6 +170,13 @@
           </camera>
         </sensor>
       </link>
+      <joint name="connector" type="fixed">
+        <parent>world</parent>
+        <child>link</child>
+        <gearbox_ratio>1.0</gearbox_ratio>
+        <gearbox_reference_body>__default__</gearbox_reference_body>
+        <thread_pitch>1.0</thread_pitch>
+      </joint>
     </model>
     <model name="sideview_camera">
       <static>true</static>
@@ -216,6 +223,13 @@
           </camera>
         </sensor>
       </link>
+      <joint name="connector" type="fixed">
+        <parent>world</parent>
+        <child>link</child>
+        <gearbox_ratio>1.0</gearbox_ratio>
+        <gearbox_reference_body>__default__</gearbox_reference_body>
+        <thread_pitch>1.0</thread_pitch>
+      </joint>
     </model>
     <model name="box_copy_0">
       <static>false</static>
@@ -228,7 +242,7 @@
         <enable_wind>false</enable_wind>
         <self_collide>false</self_collide>
         <kinematic>false</kinematic>
-        <must_be_base_link>false</must_be_base_link>
+        <must_be_base_link>true</must_be_base_link>
         <inertial>
           <mass>1.0</mass>
           <pose>0 0 0 0 0 0</pose>
@@ -302,7 +316,7 @@
         <enable_wind>false</enable_wind>
         <self_collide>false</self_collide>
         <kinematic>false</kinematic>
-        <must_be_base_link>false</must_be_base_link>
+        <must_be_base_link>true</must_be_base_link>
         <inertial>
           <mass>1.0</mass>
           <pose>0 0 0 0 0 0</pose>
@@ -376,7 +390,7 @@
         <enable_wind>false</enable_wind>
         <self_collide>false</self_collide>
         <kinematic>false</kinematic>
-        <must_be_base_link>false</must_be_base_link>
+        <must_be_base_link>true</must_be_base_link>
         <inertial>
           <mass>1.0</mass>
           <pose>0 0 0 0 0 0</pose>
@@ -450,7 +464,7 @@
         <enable_wind>false</enable_wind>
         <self_collide>false</self_collide>
         <kinematic>false</kinematic>
-        <must_be_base_link>false</must_be_base_link>
+        <must_be_base_link>true</must_be_base_link>
         <inertial>
           <mass>1.0</mass>
           <pose>0 0 0 0 0 0</pose>
@@ -524,7 +538,7 @@
         <enable_wind>false</enable_wind>
         <self_collide>false</self_collide>
         <kinematic>false</kinematic>
-        <must_be_base_link>false</must_be_base_link>
+        <must_be_base_link>true</must_be_base_link>
         <inertial>
           <mass>1.0</mass>
           <pose>0 0 0 0 0 0</pose>

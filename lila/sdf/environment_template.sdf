@@ -130,6 +130,10 @@
                 <topic>main_camera</topic>
             </sensor>
         </link>
+        <joint name="connector" type="fixed">
+          <parent>world</parent>
+          <child>link</child>
+        </joint>
     </model>
     <model name='sideview_camera'>
         <static>1</static>
@@ -161,6 +165,10 @@
                 <topic>sideview_camera</topic>
             </sensor>
         </link>
+        <joint name="connector" type="fixed">
+          <parent>world</parent>
+          <child>link</child>
+        </joint>
     </model>
   </world>
 </sdf>
