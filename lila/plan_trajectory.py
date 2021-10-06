@@ -45,6 +45,16 @@ def plan_trajectory(environment: Path, metric):
     planning_trajectory = tool_frame.transform(((0, 0, 0),), planning_space)
     goal_idx = 0
 
+    fig, ax = plt.subplots(1)
+    front_view = iio.imread("front_view.png")
+    goal_cam = np.array(
+        [f.transform(((0, 0, 0),), main_camera_frame)[0] for f in goal_frames]
+    )
+    ax.imshow(front_view)
+    for g in goal_cam:
+        ax.add_patch(Circle(g[::-1], radius=10, color="red"))
+    plt.show()
+
     result = minimize(
         lambda x: metric(x.reshape(100, planning_dim), goal_array)[goal_idx],
         planning_trajectory,
@@ -62,7 +72,12 @@ def plan_trajectory(environment: Path, metric):
         joint_pos = ik.ccd((0, 0, 0), world_pos, tool_frame, world_frame, joints)
         trajectory_joint_space[idx, ...] = joint_pos + [0.03, 0.03]
 
-    return trajectory_joint_space
+    return {
+        "joint_space": trajectory_joint_space,
+        "world_space": optimal_trajectory,
+        "main_camera_space": world_frame.transform(optimal_trajectory, main_camera_frame),
+        "side_camera_space": world_frame.transform(optimal_trajectory, side_camera_frame)
+    }
 
 
 def cost(trajectory: ArrayLike, goals: List[ArrayLike]) -> List[float]:
@@ -95,4 +110,17 @@ def cost(trajectory: ArrayLike, goals: List[ArrayLike]) -> List[float]:
 
 
 if __name__ == "__main__":
-    plan_trajectory(Path(__file__).parent / "sdf" / "four_goals.sdf", cost)
+    import imageio as iio
+    from matplotlib.patches import Circle
+    import matplotlib.pyplot as plt
+
+    environment = Path(__file__).parent / "sdf" / "four_goals.sdf"
+    trajectories = plan_trajectory(environment, cost)
+
+    fig, ax = plt.subplots(1)
+    main_cam_traj = trajectories["main_camera_space"]
+    front_view = iio.imread("front_view.png")
+    ax.imshow(front_view)
+    ax.add_patch(Circle(main_cam_traj[-1], radius=10, color="red"))
+
+    plt.show()
