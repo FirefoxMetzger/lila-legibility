@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, List, Dict
 
 import gym_ignition
 import gym_ignition_environments
@@ -24,14 +24,12 @@ import gym_ignition_models
 import tempfile
 import time
 
-# from panda_controller import LinearJointSpacePlanner
 from scenario import core as scenario_core
 from scenario import gazebo as scenario_gazebo
 from scipy.spatial.transform import Rotation as R
 from skbot.trajectory import spline_trajectory
-
-# from simulator import LegibilitySimulator
-
+import skbot.inverse_kinematics as ik
+from skimage.draw import circle_perimeter as skimage_circle
 
 class Panda(gym_ignition_environments.models.panda.Panda):
     def __init__(self, **kwargs):
@@ -128,7 +126,9 @@ def generate_video(trajectory: np.ndarray, environment: Path):
     frames = generic_sdf.worlds[0].declared_frames()
     generic_sdf.worlds[0].to_dynamic_graph(frames)
 
+    world_frame = frames["world"]
     tool_frame = frames["panda::panda_link8"]
+    base_frame = frames["panda::panda_link0"]
     main_camera_frame = frames["main_camera::link::camera::pixel_space"]
     side_camera_frame = frames["sideview_camera::link::camera::pixel_space"]
     num_goals = len([m for m in generic_sdf.worlds[0].models if m.name.startswith("box_copy_")])
@@ -139,7 +139,15 @@ def generate_video(trajectory: np.ndarray, environment: Path):
         [f.transform((0, 0, 0), frames["world"])[0] for f in goal_frames]
     )
 
-    # fig, ax = plt.subplots(1)
+    joint_list = [x for x in tool_frame.transform_chain(goal_frames[0]) if isinstance(x, tf.RotationalJoint)]
+    joint_list = [x for x in reversed(joint_list)]
+    
+    # step_order = [5, 4, 3, 6, 2, 1, 0]
+    step_order = [6, 5, 4, 3, 2, 1, 0]
+    joint_list = [joint_list[idx] for idx in step_order]
+    
+    # skbot_joint_links = [x for x in tool_frame.transform_chain(goal_frames[0]) if isinstance(x, tf.RotationalJoint)]
+
     sdf_obj = ign.sdformat.loads(sdf_string)
     for model in sdf_obj.world[0].include:
         if model.name == "panda":
@@ -184,44 +192,77 @@ def generate_video(trajectory: np.ndarray, environment: Path):
     assert panda.set_joint_velocity_targets(panda.joint_velocities())
     assert panda.set_joint_acceleration_targets(panda.joint_accelerations())
 
-    # ----
-    # TESTING ONLZ
-    import skbot.inverse_kinematics as ik
+    # sync state
+    for idx, link in enumerate(reversed(joint_list)):
+        link.param = panda.joint_positions()[idx]
+
+    circle_idx = 0
+    radius = 100
+    angles = np.linspace(0, 2*np.pi, 10)
+    circle_x = radius * np.cos(angles + np.pi/2) + 1920/2
+    circle_y = radius * np.sin(angles + np.pi/2) + 1080/2
+    circle = np.stack([circle_y, circle_x], axis=1)
+    rr, cc = skimage_circle(int(1080/2), int(1920/2), radius, shape=(1080, 1920))
+    
+    goal_target = ik.PositionTarget((0,0,0), (0, 0, 0.03), tool_frame, goal_frames[0])
+    cam_target = ik.PositionTarget((0,0,0), circle[circle_idx], tool_frame, main_camera_frame)
 
     pose = np.zeros(9, dtype=float)
-    skbot_joint_links = [x for x in tool_frame.transform_chain(goal_frames[0]) if isinstance(x, tf.RotationalJoint)]
-    for idx, link in enumerate(reversed(skbot_joint_links)):
-        link.param = panda.joint_positions()[idx]
-    pose[:7] = ik.ccd((0, 0, 0), (1080/2, 1920/3), tool_frame, main_camera_frame, skbot_joint_links)[::-1]
+    targets = [cam_target]
+    joint_angles = ik.gd(targets, joint_list, atol=0.1)
+    pose[:7] = joint_angles[step_order]
     assert panda.set_joint_position_targets(pose)
-    # -----
+
+    print(f"Planned distance from goal: {targets[0].score()}")
 
     # uncomment to show the GUI
     simulator.gui()
     simulator.run()
     time.sleep(3)
-    # simulator.prepare_goal_trajectory(goal_idx, via_point_idx=trajectory_row.iloc[0]["viaPointIdx"])
     with ign.Subscriber(
         "/main_camera", parser=camera_parser
     ) as camera_topic, ign.Subscriber(
         "/sideview_camera", parser=camera_parser
     ) as side_camera_topic:
         simulator.run(paused=True)
-        for sim_step in range(50):
+        completed_keypoints = 0
+        while completed_keypoints < len(circle) / 2:
+        # for sim_step in range(30*20):
             # ax.add_patch(Circle(eff_px, radius=5))
             simulator.run()
+
+            # panda.to_gazebo().reset_joint_positions(pose)
+            # panda.to_gazebo().reset_joint_velocities(np.zeros_like(pose))
+
+            # sync state
+            for idx, link in enumerate(joint_list):
+                joint_idx_sim = step_order[idx]
+                link.param = panda.joint_positions()[joint_idx_sim]
+
+            if targets[0].score() < 0.5:
+                completed_keypoints += 1
+                circle_idx = (circle_idx + 1) % len(circle)
+                targets[0] = ik.PositionTarget((0,0,0), circle[circle_idx], tool_frame, main_camera_frame)
+                
+                joint_angles = ik.gd(targets, joint_list, atol=0.1)
+                pose[:7] = joint_angles[step_order]
+                assert panda.set_joint_position_targets(pose)
+
+            print(f"Distance from target: {targets[0].score()}.")
             
         
-        writer = iio.get_writer("test.mp4", format="FFMPEG", mode="I", fps=30)
+        writer = iio.get_writer("test.mp4", format="FFMPEG", mode="I", fps=20)
         while True:
             try:
                 img_msg = camera_topic.recv()
-                writer.append_data(img_msg.image)
+                image = img_msg.image.copy()
+                image[rr, cc, :] = (255, 0, 0)
+                writer.append_data(image)
             except:
                 break
         writer.close()
 
-        writer = iio.get_writer("test_side.mp4", format="FFMPEG", mode="I", fps=30)
+        writer = iio.get_writer("test_side.mp4", format="FFMPEG", mode="I", fps=20)
         while True:
             try:
                 side_img_msg = side_camera_topic.recv()
