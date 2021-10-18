@@ -4,3 +4,6 @@ doc/_build
 build/
 **/__pycache__/
 *.pyc
+*.mp4
+*.png
+*.npz

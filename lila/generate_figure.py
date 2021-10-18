@@ -116,7 +116,8 @@ def camera_parser(msg):
     return ImageMessage(image=im, time=img_time)
 
 
-def generate_video(trajectory: np.ndarray, environment: Path):
+def generate_figure(trajectory: Path, environment: Path):
+    trajectory_array = np.load(trajectory)
     env = environment
     sdf_string = env.read_text()
 
@@ -129,6 +130,7 @@ def generate_video(trajectory: np.ndarray, environment: Path):
     tool_frame = frames["panda::panda_link8"]
     base_frame = frames["panda::panda_link0"]
     main_camera_frame = frames["main_camera::link::camera::pixel_space"]
+    angle_camera_frame = frames["angle_camera::link::camera::pixel_space"]
     side_camera_frame = frames["side_camera::link::camera::pixel_space"]
     num_goals = len([m for m in generic_sdf.worlds[0].models if m.name.startswith("box_copy_")])
     goal_frames = [
@@ -165,6 +167,7 @@ def generate_video(trajectory: np.ndarray, environment: Path):
 
     assert simulator.initialize()
     world = simulator.get_world()
+    assert world.set_physics_engine(scenario_gazebo.PhysicsEngine_dart)
     # goal_px = simulator.in_px_coordinates(simulator.cubes[goal_idx].base_position())
     # ax.add_patch(Circle(goal_px, radius=10, color="red"))
 
@@ -187,36 +190,24 @@ def generate_video(trajectory: np.ndarray, environment: Path):
     )
     
     simulator.run(paused=True)
-    assert panda.set_joint_position_targets(panda.joint_positions())
-    assert panda.set_joint_velocity_targets(panda.joint_velocities())
-    assert panda.set_joint_acceleration_targets(panda.joint_accelerations())
+
+    current_idx = 0
+    t_control = trajectory_array.get("time")
+    angles = trajectory_array.get("position")
+    angular_velocity = trajectory_array.get("velocity")
 
     # sync state
     for idx, link in enumerate(reversed(joint_list)):
         link.param = panda.joint_positions()[idx]
 
-    circle_idx = 0
-    radius = 100
-    angles = np.linspace(0, 2*np.pi, 20)
-    circle_x = radius * np.cos(angles + np.pi/2) + 1920/2
-    circle_y = radius * np.sin(angles + np.pi/2) + 1080/2
-    circle = np.stack([circle_y, circle_x], axis=1)
-    rr, cc = skimage_circle(int(1080/2), int(1920/2), radius, shape=(1080, 1920))
-    
-    goal_target = ik.PositionTarget((0,0,0), (0, 0, 0.03), tool_frame, goal_frames[0])
-    cam_target = ik.PositionTarget((0,0,0), circle[circle_idx], tool_frame, main_camera_frame, atol=0.1)
 
-    pose = np.zeros(9, dtype=float)
-    targets = [cam_target]
-    joint_angles = ik.gd(targets, joint_list)
-    pose[:7] = joint_angles[step_order]
-    assert panda.set_joint_position_targets(pose)
-
-    print(f"Planned distance from goal: {targets[0].score()}")
+    assert panda.set_joint_position_targets(angles[0])
+    assert panda.set_joint_velocity_targets(angular_velocity[0])
+    assert panda.set_joint_acceleration_targets(panda.joint_accelerations())
 
     # uncomment to show the GUI
     simulator.gui()
-    simulator.run()
+    simulator.run(paused=True)
     time.sleep(3)
     with ign.Subscriber(
         "/main_camera", parser=camera_parser
@@ -227,8 +218,7 @@ def generate_video(trajectory: np.ndarray, environment: Path):
     ) as angle_camera_topic:
         simulator.run(paused=True)
         completed_keypoints = 0
-        # while completed_keypoints < len(circle):
-        for sim_step in range(30*1):
+        while current_idx < len(angles):
             # ax.add_patch(Circle(eff_px, radius=5))
             simulator.run()
 
@@ -240,17 +230,13 @@ def generate_video(trajectory: np.ndarray, environment: Path):
                 joint_idx_sim = step_order[idx]
                 link.param = panda.joint_positions()[joint_idx_sim]
 
-            if targets[0].score() < 0.5:
-                completed_keypoints += 1
-                circle_idx = (circle_idx + 1) % len(circle)
-                targets[0] = ik.PositionTarget((0,0,0), circle[circle_idx], tool_frame, main_camera_frame)
-                
-                joint_angles = ik.gd(targets, joint_list)
-                pose[:7] = joint_angles[step_order]
-                assert panda.set_joint_position_targets(pose)
+            if world.time() > t_control[current_idx]:
+                current_idx += 1
+                if current_idx == len(angles):
+                    break
 
-            print(f"Distance from target: {targets[0].score()}.")
-            
+                assert panda.set_joint_position_targets(angles[current_idx])
+                assert panda.set_joint_velocity_targets(angular_velocity[current_idx])           
         
         writer = iio.get_writer("test.mp4", format="FFMPEG", mode="I", fps=20)
         while True:
@@ -293,7 +279,7 @@ def generate_video(trajectory: np.ndarray, environment: Path):
 
 
 if __name__ == "__main__":
-    generate_video(
-        np.zeros((100, 9), dtype=np.float_),
+    generate_figure(
+        Path(__file__).parents[1] / "trajectories" / "test.npz",
         Path(__file__).parent / "sdf" / "four_goals.sdf",
     )
